@@ -1,0 +1,12 @@
+# Copyright (c) 2022 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+menuconfig INPUT_IQS5XX
+    bool "Azoteq IQS5XX trackpads"
+    default y
+    depends on GPIO
+    depends on I2C
+    depends on INPUT
+    depends on DT_HAS_AZOTEQ_IQS5XX_ENABLED
+    help
+      Enable driver for Azoteq IQS5XX trackpads

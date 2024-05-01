@@ -1,0 +1,11 @@
+description: |
+  Sensor driver for the Azoteq IQS5XX trackpad, using the I2C interface
+
+compatible: "azoteq,iqs5xx"
+
+include: ["i2c-device.yaml"]
+
+properties:
+  dr-gpios:
+    type: phandle-array
+    description: Data ready pin for the trackpad
