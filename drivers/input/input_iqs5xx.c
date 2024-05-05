@@ -200,10 +200,21 @@ static void iqs5xx_thread(void *arg, void *unused2, void *unused3) {
       hasGesture = true;
       break;
     case GESTURE_SCROLLG:
-      input_report_rel(dev, INPUT_REL_WHEEL, data->raw_data.ry, false,
-                       K_FOREVER);
-      input_report_rel(dev, INPUT_REL_HWHEEL, data->raw_data.rx, true,
-                       K_FOREVER);
+      uint16_t scroll = 0, pan = 0;
+      if (data->raw_data.ry > 0) {
+        scroll = 1;
+      }
+      if (data->raw_data.ry < 0) {
+        scroll = -1;
+      }
+      if (data->raw_data.rx > 0) {
+        pan = 1;
+      }
+      if (data->raw_data.rx < 0) {
+        pan = -1;
+      }
+      input_report_rel(dev, INPUT_REL_WHEEL, scroll, false, K_FOREVER);
+      input_report_rel(dev, INPUT_REL_HWHEEL, pan, true, K_FOREVER);
       hasGesture = true;
       break;
     default:
@@ -370,6 +381,6 @@ static int iqs5xx_init(const struct device *dev) {
                         &iqs5xx_config_##n, POST_KERNEL,                       \
                         CONFIG_INPUT_INIT_PRIORITY, NULL);                     \
   K_THREAD_DEFINE(thread1, 1024, iqs5xx_thread, DEVICE_DT_GET(DT_DRV_INST(n)), \
-                  NULL, NULL, K_PRIO_COOP(10), 0, 0);                          \
+                  NULL, NULL, K_PRIO_COOP(10), 0, 0);
 
 DT_INST_FOREACH_STATUS_OKAY(IQS5XX_INST)
