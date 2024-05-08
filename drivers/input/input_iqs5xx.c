@@ -9,8 +9,25 @@
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#if CONFIG_MINIMAL_LIBC
+// https://git.musl-libc.org/cgit/musl/tree/src/math/fabsf.c
+static float fabsf(float x) {
+  union {
+    float f;
+    uint32_t i;
+  } u = {x};
+  u.i &= 0x7fffffff;
+  return u.f;
+}
+#else
+#include <math.h>
+#endif
 
 LOG_MODULE_REGISTER(azoteq_iqs5xx, CONFIG_ZMK_LOG_LEVEL);
+
+#define SCROLL_REPORT_DISTANCE 35
+static int16_t lastXScrollReport = 0;
+static int16_t lastYScrollReport = 0;
 
 // Default config
 struct iqs5xx_reg_config iqs5xx_reg_config_default() {
@@ -200,19 +217,19 @@ static void iqs5xx_thread(void *arg, void *unused2, void *unused3) {
       hasGesture = true;
       break;
     case GESTURE_SCROLLG:
+      lastXScrollReport -= data->raw_data.ry;
+      lastYScrollReport = data->raw_data.rx;
       uint16_t scroll = 0, pan = 0;
-      if (data->raw_data.ry > 0) {
-        scroll = 1;
+
+      if (fabsf(lastXScrollReport) - (int16_t)SCROLL_REPORT_DISTANCE > 0) {
+        scroll = lastXScrollReport >= 0 ? 1 : -1;
+        lastXScrollReport = 0;
       }
-      if (data->raw_data.ry < 0) {
-        scroll = -1;
+      if (fabsf(lastYScrollReport) - (int16_t)SCROLL_REPORT_DISTANCE > 0) {
+        pan = lastYScrollReport >= 0 ? 1 : -1;
+        lastYScrollReport = 0;
       }
-      if (data->raw_data.rx > 0) {
-        pan = 1;
-      }
-      if (data->raw_data.rx < 0) {
-        pan = -1;
-      }
+
       input_report_rel(dev, INPUT_REL_WHEEL, scroll, false, K_FOREVER);
       input_report_rel(dev, INPUT_REL_HWHEEL, pan, true, K_FOREVER);
       hasGesture = true;
